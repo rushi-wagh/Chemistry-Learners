@@ -40,11 +40,15 @@ export const deleteUserProfile = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(404, "User not found");
   }
+  user.activeSessionId = null;
+  user.refreshToken = undefined;
+  await user.save({ validateBeforeSave: false });
   await user.deleteOne();
+
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   };
   res.clearCookie("accessToken", cookieOptions);
   res.clearCookie("refreshToken", cookieOptions);
@@ -81,10 +85,26 @@ export const changePassword = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Old password is incorrect");
   }
   user.password = newPassword;
+  user.activeSessionId = null;
+  user.refreshToken = undefined;
   await user.save();
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  };
+  res.clearCookie("accessToken", cookieOptions);
+  res.clearCookie("refreshToken", cookieOptions);
+
   return res
     .status(200)
-    .json(new ApiResponse(200, "Password changed successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        "Password changed successfully. Please sign in again.",
+      ),
+    );
 });
 
 export const getEnrolledCourses = asyncHandler(async (req, res) => {

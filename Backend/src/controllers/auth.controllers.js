@@ -7,6 +7,19 @@ import jwt from "jsonwebtoken";
 import { v4 as uuid } from "uuid";
 import { sendVerificationEmail } from "../utils/mail.js";
 
+const isSessionActive = (user) => {
+  if (!user.activeSessionId || !user.refreshToken) {
+    return false;
+  }
+
+  try {
+    jwt.verify(user.refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const signup = asyncHandler(async (req, res) => {
   const { name, email, password, phoneNo, role } = req.body;
   if (!name || !email || !password || !phoneNo) {
@@ -61,8 +74,13 @@ export const signin = asyncHandler(async (req, res) => {
   if (!isMatched) {
     throw new ApiError(400, "Invalid credientials");
   }
-  if (existingUser.activeSessionId && !forceLogin) {
+  if (isSessionActive(existingUser) && !forceLogin) {
     throw new ApiError(409, "User already logged in from another device");
+  }
+
+  if (existingUser.activeSessionId && !isSessionActive(existingUser)) {
+    existingUser.activeSessionId = null;
+    existingUser.refreshToken = undefined;
   }
 
   const sessionId = uuid();
@@ -130,7 +148,7 @@ export const logOut = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   await User.findByIdAndUpdate(userId, {
     $unset: { refreshToken: "" },
-    activeSessionId: null,
+    $set: { activeSessionId: null },
   });
 
   res.clearCookie("accessToken", cookieOptions);
