@@ -14,8 +14,12 @@ const razorpay = new Razorpay({
 console.log("Razorpay Instance Created:", razorpay);    
 
 export const createOrder = asyncHandler(async(req,res) => {
-    const {amount} = req.body;
     const {courseId} = req.params;
+    const course = await Course.findById(courseId);
+    if(!course){
+      throw new ApiError(404,"Course not found")
+    }
+    const amount = course.courseFees;
     if(!amount || amount <= 0){
       throw new ApiError(400,"Invalid amount")
     }

@@ -21,7 +21,7 @@ const isSessionActive = (user) => {
 };
 
 export const signup = asyncHandler(async (req, res) => {
-  const { name, email, password, phoneNo, role } = req.body;
+  const { name, email, password, phoneNo } = req.body;
   if (!name || !email || !password || !phoneNo) {
     throw new ApiError(400, "All fields are required");
   }
@@ -34,7 +34,6 @@ export const signup = asyncHandler(async (req, res) => {
     email,
     password,
     phoneNo,
-    role,
   });
   if (!user) {
     throw new ApiError(500, "Error wwhile creating user");
