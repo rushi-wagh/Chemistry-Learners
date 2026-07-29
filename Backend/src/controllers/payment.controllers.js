@@ -5,6 +5,7 @@ import {ApiResponse} from "../utils/api-response.js"
 import Payment from "../models/payments.models.js"
 import Razorpay from "razorpay";
 import { enrollInCourse } from "../utils/enroll.js";
+import Course from "../models/course.models.js";
 
 
 const razorpay = new Razorpay({
